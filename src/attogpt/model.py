@@ -1,5 +1,5 @@
 import numpy as np
-from attogpt.utils import he_init, relu, normal_init
+from attogpt.utils import he_init, relu, normal_init, softmax
 from attogpt.config import Config
 
 
@@ -18,6 +18,35 @@ class Attention:
         self.Wq = normal_init(self.d_model, self.d_model, self.attention_std, rng)
         self.Wk = normal_init(self.d_model, self.d_model, self.attention_std, rng)
         self.Wv = normal_init(self.d_model, self.d_model, self.attention_std, rng)
+        self.Wo = normal_init(self.d_model, self.d_model, self.attention_std, rng)
+
+    def _split(self, x):
+        B, T = x.shape[0], x.shape[1]
+        x = x.reshape(B, T , self.n_heads, self.d_k)
+        return x.transpose(0, 2, 1, 3)  # (B, n_heads, T, d_k)
+    
+    def _concat(self, x):
+        B, H, T, d_k = x.shape
+        return x.transpose(0, 2, 1, 3).reshape(B, T, H * d_k)  # (B, T, d_model)
+
+    def forward(self, x):
+        self.x = x
+        B, T = x.shape[0], x.shape[1]
+        
+        self.Q = self._split(x @ self.Wq)  # (B, H, T, d_k)
+        self.K = self._split(x @ self.Wk)
+        self.V = self._split(x @ self.Wv)
+
+        scores = self.Q @ self.K.transpose(0, 1, 3, 2) / np.sqrt(self.d_k)  # (B, H, T, T)
+
+        mask = np.triu(np.full((T, T), -1e10), k=1)
+        masked_scores = mask + scores
+
+        self.attn_pat = softmax(masked_scores, axis=-1)
+        head_out = self.attn_pat @ self.V
+
+        self.concat = self._concat(head_out)  # (B, T, d_model)
+        return self.concat @ self.Wo
 
 
 class MLP:
