@@ -7,7 +7,7 @@ class Config:
         d_ff: int = 512,  # Matrix dimension for feedforward layers
         n_layers: int = 2,  # Number of transformer blocks
         n_heads: int = 4,  # Number of attention heads
-        embedding_std: float = 0.02,  # Standard deviation for initialization of embeddings
+        embeddings_std: float = 0.02,  # Standard deviation for initialization of embeddings
         attention_std: float = 0.02,  # Standard deviation for initialization of attention mechanism weights
         seed: int = 42,  # Random seed
     ):
@@ -25,7 +25,7 @@ class Config:
         self.d_ff = d_ff
         self.n_layers = n_layers
         self.n_heads = n_heads
-        self.embeddings_std = embedding_std
+        self.embeddings_std = embeddings_std
         self.attention_std = attention_std
         self.seed = seed
 

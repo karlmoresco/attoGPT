@@ -102,15 +102,33 @@ class Embedding:
         rng: np.random.Generator,
     ):
         self.config = config
-        self.E = normal_init(self.config.vocab_size, self.config.d_model, self.config.embedding_std, rng)
+        self.E = normal_init(self.config.vocab_size, self.config.d_model, self.config.embeddings_std, rng)
         self.token_ids = None
 
     def forward(self, token_ids):
-        self.token_ids = token_ids
+        self.token_ids = token_ids  # (B, T)
         return self.E[token_ids]
 
 
-class AttoGPT():
+class Block:
+    def __init__(
+        self,
+        config: Config,
+        rng: np.random.Generator,
+    ):
+        self.ln_1 = LayerNorm(config)
+        self.attn = Attention(config, rng)
+        self.ln_2 = LayerNorm(config)
+        self.mlp = MLP(config, rng)
+    
+    def forward(self, x):
+        """Pre-LN transformer block"""
+        x = x + self.attn.forward(self.ln_1.forward(x))
+        x = x + self.mlp.forward(self.ln_2.forward(x))
+        return x
+
+
+class AttoGPT:
     def __init__(
             self,
             config: Config,

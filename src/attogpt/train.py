@@ -6,30 +6,25 @@ class Train:
     def __init__(
             self,
             model,
-            dataset,
             config: Config,
+            corpus,
+            rng: np.random.Generator,
             batch_size: int = 32,
             lr: float = 2e-4,
-            epochs: int = 8
+            steps: int = 4000,
     ):
         self.model = model
-        self.dataset = dataset
         self.config = config
+        self.corpus = np.asarray(corpus)
+        self.rng = rng
         self.seq_len = self.config.seq_len
         self.batch_size = batch_size
         self.lr = lr
-        self.epochs = epochs
+        self.steps = steps
+    
+    def batch(self):
+        startpoints = self.rng.integers(0, len(self.corpus) - self.seq_len, size=self.batch_size)
+        x = np.stack([self.corpus[sp : sp + self.seq_len] for sp in startpoints])
+        y = np.stack([self.corpus[sp + 1 : sp + self.seq_len + 1] for sp in startpoints])
+        return x, y
 
-    def batches(self, tokenized_corpus):
-        n_sequences = len(tokenized_corpus) - self.seq_len
-
-        # Make training examples with stride = 1
-        x_sequences = np.array([tokenized_corpus[i:i+self.seq_len] for i in range(n_sequences)])
-        y_sequences = np.array([tokenized_corpus[i+1:i+self.seq_len+1] for i in range(n_sequences)])
-
-        n_batches = x_sequences.shape[0] // self.batch_size
-
-        x_batches = np.array_split(x_sequences[:n_batches*self.batch_size], n_batches)
-        y_batches = np.array_split(y_sequences[:n_batches*self.batch_size], n_batches)
-
-        return x_batches, y_batches
