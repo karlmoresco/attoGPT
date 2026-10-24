@@ -135,7 +135,11 @@ class AttoGPT:
             rng: np.random.Generator,
     ):
         self.config = config
+        self.embedding = Embedding(config, rng)
         self.positional_encoding = self._get_positional_encoding()
+        self.blocks = [Block(config, rng) for _ in range(self.config.n_layers)]
+        self.ln_f = LayerNorm(config)
+        self.W_out = normal_init(self.config.d_model, self.config.vocab_size, self.config.embeddings_std, rng)
 
     def _get_positional_encoding(self):
         """Sinusoidal positional encoder"""
@@ -151,7 +155,16 @@ class AttoGPT:
         pe[:, 0::2] = np.sin(positions * factors)
         pe[:, 1::2] = np.cos(positions * factors)
 
-        return pe
+        return self.config.pe_scale * pe
 
     def encode_position(self, sequence):
         return sequence + self.positional_encoding
+
+    def forward(self, token_ids):
+        x = self.embedding.forward(token_ids)
+        x = self.encode_position(x)
+        for block in self.blocks:
+            x = block.forward(x)
+        self.h = self.ln_f.forward(x)
+        return self.h @ self.W_out
+

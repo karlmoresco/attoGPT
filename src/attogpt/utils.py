@@ -17,11 +17,27 @@ def he_init(fan_in, fan_out, rng):
     return rng.standard_normal(size=(fan_in, fan_out)) * np.sqrt(2 / fan_in)
 
 
-def softmax(x, axis=-1):
+def softmax(x, axis=-1, temperature=1.0):
     """Softmax, shifted for numerical stability."""
-    shifted = x - np.max(x, axis=axis, keepdims=True)
+    if temperature <= 0:
+        raise ValueError("temperature must be > 0")
+    scaled = x / temperature
+    shifted = scaled - np.max(scaled, axis=axis, keepdims=True)
     e = np.exp(shifted)
     return e / np.sum(e, axis=axis, keepdims=True)
+
+
+def cross_entropy(logits, targets, eps=1e-12):
+    B, T, _ = logits.shape
+
+    probs = softmax(logits, axis=-1)
+
+    b_idx = np.arange(B)[:, None]
+    t_idx = np.arange(T)[None, :]
+    target_probs = probs[b_idx, t_idx, targets]  # (B, T)
+
+    loss = -np.mean(np.log(target_probs + eps))
+    return loss
 
 
 def clean_dataset(input_path, output_path):

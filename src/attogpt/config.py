@@ -9,6 +9,7 @@ class Config:
         n_heads: int = 4,  # Number of attention heads
         embeddings_std: float = 0.02,  # Standard deviation for initialization of embeddings
         attention_std: float = 0.02,  # Standard deviation for initialization of attention mechanism weights
+        pe_scale: float = 0.1,  # Amplitude scale factor for sinusoidal positional encoding
         seed: int = 42,  # Random seed
     ):
         if d_model % 2 != 0:
@@ -27,6 +28,7 @@ class Config:
         self.n_heads = n_heads
         self.embeddings_std = embeddings_std
         self.attention_std = attention_std
+        self.pe_scale = pe_scale
         self.seed = seed
 
         self.d_k = d_model // n_heads
