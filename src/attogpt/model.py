@@ -48,6 +48,34 @@ class Attention:
         self.concat = self._concat(head_out)  # (B, T, d_model)
         return self.concat @ self.Wo
 
+    def backward(self, dout):
+        B, T, _ = dout.shape
+        N = B * T
+
+        self.dWo = self.concat.reshape(N, -1).T @ dout.reshape(N, -1)
+        dconcat = dout @ self.Wo.T
+
+        dhead_out = self._split(dconcat)  # (B, H, T, d_k)
+        dV = self.attn_pat.transpose(0, 1, 3, 2) @ dhead_out
+        dattn_pat = dhead_out @ self.V.transpose(0, 1, 3, 2)
+
+        D = np.sum(dattn_pat * self.attn_pat, axis=-1, keepdims=True)  # (B, H, T, 1)
+        dscores = self.attn_pat * (dattn_pat - D)
+
+        dQ = (dscores @ self.K) / np.sqrt(self.d_k)
+        dK = (dscores.transpose(0, 1, 3, 2) @ self.Q) / np.sqrt(self.d_k)
+
+        dxWq = self._concat(dQ)
+        dxWk = self._concat(dK)
+        dxWv = self._concat(dV)
+
+        self.dWq = self.x.reshape(N, -1).T @ dxWq.reshape(N, -1)
+        self.dWk = self.x.reshape(N, -1).T @ dxWk.reshape(N, -1)
+        self.dWv = self.x.reshape(N, -1).T @ dxWv.reshape(N, -1)
+
+        dx = dxWq @ self.Wq.T + dxWk @ self.Wk.T + dxWv @ self.Wv.T
+        return dx
+
 
 class MLP:
     def __init__(
@@ -70,6 +98,23 @@ class MLP:
         self.H1 = relu(self.Z1)
         self.Z2 = self.H1 @ self.W2 + self.b2
         return self.Z2
+    
+    def backward(self, dout):
+        B, T, _ = dout.shape
+        N = B * T
+
+        self.dW2 = self.H1.reshape(N, -1).T @ dout.reshape(N, -1)
+        self.db2 = np.sum(dout, axis=(0, 1))
+
+        dH1 = dout @ self.W2.T
+        dZ1 = dH1 * (self.Z1 > 0)
+
+        self.dW1 = self.X.reshape(N, -1).T @ dZ1.reshape(N, -1)
+        self.db1 = np.sum(dZ1, axis=(0, 1))
+
+        dx = dZ1 @ self.W1.T
+        return dx
+
 
 
 class LayerNorm:
@@ -93,6 +138,17 @@ class LayerNorm:
 
         self.x_bar = (x - self.mu) / np.sqrt(self.var + self.eps)
         return self.g * self.x_bar + self.b
+    
+    def backward(self, dout):
+        self.dg = np.sum(dout * self.x_bar, axis=(0, 1))
+        self.db = np.sum(dout, axis=(0, 1))
+
+        s = np.sqrt(self.var + self.eps)  # (B, T, 1)
+        c = dout * self.g  # (B, T, d_model)
+        mean_c = np.mean(c, axis=-1, keepdims=True)
+        mean_cx = np.mean(c * self.x_bar, axis=-1, keepdims=True)
+        dx = (c - mean_c - self.x_bar * mean_cx) / s  # (B, T, d_model)
+        return dx
 
 
 class Embedding:
@@ -102,12 +158,16 @@ class Embedding:
         rng: np.random.Generator,
     ):
         self.config = config
-        self.E = normal_init(self.config.vocab_size, self.config.d_model, self.config.embeddings_std, rng)
+        self.W_emb = normal_init(self.config.vocab_size, self.config.d_model, self.config.embeddings_std, rng)
         self.token_ids = None
 
     def forward(self, token_ids):
         self.token_ids = token_ids  # (B, T)
-        return self.E[token_ids]
+        return self.W_emb[token_ids]
+    
+    def backward(self, dout):
+        self.dW_emb = np.zeros_like(self.W_emb)
+        np.add.at(self.dW_emb, self.token_ids, dout)
 
 
 class Block:
@@ -126,6 +186,11 @@ class Block:
         x = x + self.attn.forward(self.ln_1.forward(x))
         x = x + self.mlp.forward(self.ln_2.forward(x))
         return x
+
+    def backward(self, dout):
+        dU = dout + self.ln_2.backward(self.mlp.backward(dout))
+        dx = dU + self.ln_1.backward(self.attn.backward(dU))
+        return dx
 
 
 class AttoGPT:
@@ -157,8 +222,8 @@ class AttoGPT:
 
         return self.config.pe_scale * pe
 
-    def encode_position(self, sequence):
-        return sequence + self.positional_encoding
+    def encode_position(self, x):
+        return x + self.positional_encoding
 
     def forward(self, token_ids):
         x = self.embedding.forward(token_ids)
@@ -166,5 +231,28 @@ class AttoGPT:
         for block in self.blocks:
             x = block.forward(x)
         self.h = self.ln_f.forward(x)
-        return self.h @ self.W_out
+        self.logits = self.h @ self.W_out
+        return self.logits
 
+    def backward(self, targets):
+        B, T, V = self.logits.shape
+        N = B * T
+
+        probs = softmax(self.logits, axis=-1)
+
+        one_hot = np.zeros_like(probs)
+        b_idx = np.arange(B)[:, None]
+        t_idx = np.arange(T)[None, :]
+        one_hot[b_idx, t_idx, targets] = 1.0
+
+        G = (probs - one_hot) / N
+        H = self.h.reshape(N, -1)
+        self.dW_out = H.T @ G.reshape(N, V)
+
+        dh = G @ self.W_out.T  # (B, T, d_model)
+        dx = self.ln_f.backward(dh)
+
+        for block in reversed(self.blocks):
+            dx = block.backward(dx)
+
+        self.embedding.backward(dx)
