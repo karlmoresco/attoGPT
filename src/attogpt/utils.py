@@ -39,12 +39,18 @@ def cross_entropy(logits, targets, eps=1e-12):
     return loss
 
 
-def clean_dataset(input_path, output_path):
+def clean_dataset(input_path, output_path, include_breaks=False):
     """Clean raw data corpus"""
     with open(input_path, "r", encoding="utf-8") as f_in:
         data = f_in.read()
 
-    data = re.sub(r'\s+', ' ', data)
+    if include_breaks:
+        data = re.sub(r'[ \t]+', ' ', data)
+        data = re.sub(r' *\n *', '\n', data)
+        data = re.sub(r'\n{3,}', '\n\n', data)
+    else:
+        data = re.sub(r'\s+', ' ', data)
+    
     data = data.strip()
 
     with open(output_path, "w", encoding="utf-8") as f_out:
