@@ -1,7 +1,5 @@
 # AttoGPT
 
----
-
 A Generative Pre-trained Transformer implementation from scratch depending only on NumPy. Developed as a study of the Transformer architecture by direct implementation of its underlying math. The model features the standard components such as LayerNorm, multi-head attention, Adam optimizer. A small instance was trained on a corpus of public-domain English translations of Greek philosophy texts.
 
 ## Features
@@ -50,11 +48,13 @@ uv sync
 2. **Sample** – run the cells in `notebooks/inference.ipynb`
 
 ![Training curve](output.png)
+
 *Loss curve (CPU, expected overfit)*
 
 ---
 
 ![Model sample](sample.png)
+
 *Generated sample from prompt ”First principles or reasoning by analogy?” (noise expected since small model ~1M parameters)*
 
 ## References
