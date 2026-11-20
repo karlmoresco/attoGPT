@@ -13,4 +13,9 @@ wheels/
 .DS_Store
 
 # data
-data/
+data/hemingway/
+data/plato/texts/
+data/plato/raw_corpus.txt
+data/plato/clean_corpus.txt
+data/plato/compile.ipynb
+data/plato/checkpts/

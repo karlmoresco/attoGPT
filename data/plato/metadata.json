@@ -1,0 +1,25 @@
+{
+    "dataset": "plato",
+    "description": "English translations of Plato's dialogue works",
+    "translator": "Benjamin Jowett",
+    "sources": ["Project Gutenberg", "MIT Internet Classics Archive"],
+    "works": [
+        "Gorgias",
+        "Phaedrus",
+        "Theaetetus",
+        "Cratylus",
+        "Meno",
+        "Laches",
+        "Euthyphro",
+        "Ion",
+        "Crito",
+        "Sophist",
+        "Statesman",
+        "Apology",
+        "Parmenides",
+        "Charmides",
+        "Lysis",
+        "Critias",
+        "Timaeus"
+    ]
+}

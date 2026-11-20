@@ -1,5 +1,6 @@
 import numpy as np
 import pickle
+import os
 from attogpt.config import Config
 from attogpt.utils import cross_entropy
 from attogpt.opt import Adam
@@ -141,6 +142,7 @@ class Train:
         return float(np.mean(losses))
     
     def save(self, path):
+        os.makedirs(os.path.dirname(path), exist_ok=True)
         ckpt = {
             "model": self.model,
             "optimizer": self.optimizer,
