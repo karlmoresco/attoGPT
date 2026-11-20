@@ -60,17 +60,20 @@ uv sync
 ## References
 
 **Research**
-– Vaswani et al., *[Attention Is All You Need](https://arxiv.org/abs/1706.03762)*
-– Radford et al., *[Language Models are Unsupervised Multitask Learners](https://cdn.openai.com/better-language-models/language_models_are_unsupervised_multitask_learners.pdf)*
-– Xiong et al., *[On Layer Normalization in the Transformer Architecture](https://arxiv.org/abs/2002.04745)*
-– He et al., *[Delving Deep into Rectifiers: Surpassing Human-Level Performance on ImageNet Classification](https://arxiv.org/abs/1502.01852)*
-– Ba et al., *[Layer Normalization](https://arxiv.org/abs/1607.06450)*
-– Kingma & Ba, *[Adam: A Method for Stochastic Optimization](https://arxiv.org/abs/1412.6980)*
+
+- Vaswani et al., *[Attention Is All You Need](https://arxiv.org/abs/1706.03762)*
+- Radford et al., *[Language Models are Unsupervised Multitask Learners](https://cdn.openai.com/better-language-models/language_models_are_unsupervised_multitask_learners.pdf)*
+- Xiong et al., *[On Layer Normalization in the Transformer Architecture](https://arxiv.org/abs/2002.04745)*
+- He et al., *[Delving Deep into Rectifiers: Surpassing Human-Level Performance on ImageNet Classification](https://arxiv.org/abs/1502.01852)*
+- Ba et al., *[Layer Normalization](https://arxiv.org/abs/1607.06450)*
+- Kingma & Ba, *[Adam: A Method for Stochastic Optimization](https://arxiv.org/abs/1412.6980)*
 
 **Code**
-– [openai/gpt-2](https://github.com/openai/gpt-2)
-– [karpathy/nanoGPT](https://github.com/karpathy/nanogpt)
+
+- [openai/gpt-2](https://github.com/openai/gpt-2)
+- [karpathy/nanoGPT](https://github.com/karpathy/nanogpt)
 
 **Data**
-– [MIT Internet Classics Archive](https://classics.mit.edu/)
-– [Project Gutenberg](https://www.gutenberg.org/)
+
+- [MIT Internet Classics Archive](https://classics.mit.edu/)
+- [Project Gutenberg](https://www.gutenberg.org/)
